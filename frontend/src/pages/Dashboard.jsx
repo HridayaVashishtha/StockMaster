@@ -29,7 +29,7 @@ export default function Dashboard() {
       { value: 2, label: 'waiting', color: colors.gold },
       { value: 6, label: 'operations', color: colors.sage }
     ],
-    onClick: () => navigate("/stock")
+    onClick: () => navigate("/delivery")
   };
 
   return (
