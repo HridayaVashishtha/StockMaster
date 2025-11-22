@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 const colors = {
@@ -9,11 +10,12 @@ const colors = {
 };
 
 const DeliveryPage = () => {
+  const navigate = useNavigate();
+  
   const [deliveries, setDeliveries] = useState([
     { id: 1, reference: "WH/OUT/0001", from: "WH/Stock1", to: "Customer", contact: "Azure Interior", scheduleDate: "", status: "Ready" },
     { id: 2, reference: "WH/OUT/0002", from: "WH/Stock1", to: "Customer", contact: "Azure Interior", scheduleDate: "", status: "Ready" },
   ]);
-
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredDeliveries = deliveries.filter(
@@ -21,6 +23,10 @@ const DeliveryPage = () => {
       d.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.contact.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleReferenceClick = (deliveryId) => {
+    navigate(`/delivery/${deliveryId}`);
+  };
 
   const IconButton = ({ children, color = colors.brown }) => (
     <button
@@ -86,7 +92,7 @@ const DeliveryPage = () => {
                   margin: 0,
                 }}
               >
-                Delivery
+                Delivery Orders
               </h2>
             </div>
 
@@ -153,8 +159,24 @@ const DeliveryPage = () => {
 
             <tbody>
               {filteredDeliveries.map((item) => (
-                <tr key={item.id} style={{ borderBottom: `1px dashed ${colors.sage}` }}>
-                  <td style={{ padding: "12px 8px", color: colors.brown, fontSize: "14px", fontStyle: "italic" }}>
+                <tr 
+                  key={item.id} 
+                  style={{ borderBottom: `1px dashed ${colors.sage}` }}
+                >
+                  <td 
+                    style={{ 
+                      padding: "12px 8px", 
+                      color: colors.brown, 
+                      fontSize: "14px", 
+                      fontStyle: "italic",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      fontWeight: "600"
+                    }}
+                    onClick={() => handleReferenceClick(item.id)}
+                    onMouseOver={(e) => e.target.style.color = colors.gold}
+                    onMouseOut={(e) => e.target.style.color = colors.brown}
+                  >
                     {item.reference}
                   </td>
                   <td style={{ padding: "12px 8px", color: colors.brown, fontSize: "14px" }}>{item.from}</td>
@@ -183,7 +205,7 @@ const DeliveryPage = () => {
               fontSize: "14px",
             }}
           >
-            Populate all work orders added to manufacturing order
+            Populate all delivery orders for outbound shipments
             <br />
             <span style={{ fontSize: "12px", color: colors.gold }}>Locations of warehouse: WH/Stock1</span>
           </div>

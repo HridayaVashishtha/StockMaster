@@ -11,6 +11,7 @@ import DeliveryPage from "./pages/DeliveryPage";
 import Stock from "./pages/Stock";
 import MoveHistory from "./pages/MoveHistory";
 import ReceiptDetails from "./pages/ReceiptDetails";
+import DeliveryDetails from "./pages/DeliveryDetails";
 
 function App() {
   injectGlobalStyles();
@@ -29,6 +30,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/history" element={<MoveHistory />} />
         <Route path="/receipt/:id" element={<ReceiptDetails />} />
+        <Route path="/delivery/:id" element={<DeliveryDetails />} />
       </Routes>
     </BrowserRouter>
   );
