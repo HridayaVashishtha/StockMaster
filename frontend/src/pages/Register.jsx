@@ -1,20 +1,27 @@
 import { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./AuthStyles.css";
 
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("WarehouseStaff");
   const [msg, setMsg] = useState("");
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setMsg("");
     try {
-      const res = await axios.post("http://localhost:5000/auth/register", { name, email, password });
-      setMsg(res.data.error || res.data.message || "Registered");
+      const res = await axios.post("http://localhost:5000/auth/register", { name, email, password, role });
+      if (res.data.error) {
+        setMsg(res.data.error);
+      } else {
+        setMsg(res.data.message || "Registered successfully");
+        setTimeout(() => navigate("/login"), 1500);
+      }
     } catch (err) {
       setMsg(err.response?.data?.error || "Registration failed");
     }
@@ -29,6 +36,7 @@ export default function Register() {
             type="text"
             placeholder="Name"
             autoComplete="name"
+            required
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -36,6 +44,7 @@ export default function Register() {
             type="email"
             placeholder="Email"
             autoComplete="email"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -43,9 +52,14 @@ export default function Register() {
             type="password"
             placeholder="Password"
             autoComplete="new-password"
+            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <select value={role} onChange={(e) => setRole(e.target.value)}>
+            <option value="WarehouseStaff">Warehouse Staff</option>
+            <option value="InventoryManager">Inventory Manager</option>
+          </select>
           <button type="submit">Create Account</button>
           <div className="msg">{msg}</div>
         </form>

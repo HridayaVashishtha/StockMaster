@@ -33,7 +33,8 @@ body {
   flex-direction:column;
   gap:18px;
 }
-.auth-card input {
+.auth-card input,
+.auth-card select {
   background:#000;
   border:1px solid #333;
   color:#fff;
@@ -43,8 +44,12 @@ body {
   outline:none;
   transition:.2s border;
 }
-.auth-card input:focus {
+.auth-card input:focus,
+.auth-card select:focus {
   border-color:#555;
+}
+.auth-card select {
+  cursor:pointer;
 }
 .auth-card button {
   background:#fff;
@@ -62,7 +67,7 @@ body {
   background:#e6e6e6;
 }
 .auth-alt {
-  margin-top:24px;
+  margin-top:16px;
   font-size:13px;
   text-align:center;
   color:#aaa;
