@@ -20,6 +20,8 @@ export default function Login() {
         setMsg(res.data.error);
       } else if (res.data.token) {
         localStorage.setItem("token", res.data.token);
+        localStorage.setItem("name", res.data.name);
+        localStorage.setItem("role", res.data.role);
         setMsg("Login successful");
         setTimeout(() => navigate("/profile"), 800);
       }
