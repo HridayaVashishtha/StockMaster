@@ -30,7 +30,7 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token'); // or however you store auth token
+        const token = localStorage.getItem('token');
         const response = await axios.get('http://localhost:5000/api/profile', {
           headers: { 
             Authorization: `Bearer ${token}` 
@@ -39,8 +39,6 @@ export default function Profile() {
         
         setProfile(response.data);
         setEditedProfile(response.data);
-        
-        // Check if user is admin/inventory manager
         setIsAdmin(response.data.role === 'Inventory Manager');
         setLoading(false);
       } catch (error) {
@@ -113,7 +111,6 @@ export default function Profile() {
     }
   };
 
-  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8E1B7' }}>
@@ -132,7 +129,6 @@ export default function Profile() {
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-6">
-              {/* Profile Picture */}
               <div className="relative">
                 <div 
                   className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-semibold"
@@ -147,7 +143,6 @@ export default function Profile() {
                 </button>
               </div>
 
-              {/* Basic Info */}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {profile.firstName || profile.lastName ? 
@@ -159,7 +154,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-2">
               {!isEditing ? (
                 <button
@@ -197,12 +191,11 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Profile Details */}
+        {/* Personal Information */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* First Name */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4" />
@@ -223,7 +216,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Last Name */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4" />
@@ -244,7 +236,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Email */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <Mail className="w-4 h-4" />
@@ -265,7 +256,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Phone */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <Phone className="w-4 h-4" />
@@ -286,7 +276,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Location */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4" />
@@ -307,7 +296,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Department */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <Building className="w-4 h-4" />
@@ -335,7 +323,6 @@ export default function Profile() {
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Work Information</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Role */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <Briefcase className="w-4 h-4" />
@@ -358,7 +345,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Join Date */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4" />
@@ -378,7 +364,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Employee ID */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4" />
