@@ -5,12 +5,11 @@ import { injectGlobalStyles } from "../styles/colors";
 
 export default function Login() {
   injectGlobalStyles();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const navigate = useNavigate();
-
+  
   const handleLogin = async (e) => {
     e.preventDefault();
     setMsg("");
@@ -29,11 +28,20 @@ export default function Login() {
       setMsg(err.response?.data?.error || "Login failed");
     }
   };
-
+  
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <h2>Login</h2>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <h2 style={{ marginBottom: "16px" }}>Welcome Back!</h2>
+          {/* Replace the src below with your actual logo path */}
+          <img 
+            src="/vite.png" 
+            alt="Logo" 
+            style={{ width: "80px", height: "80px", objectFit: "contain" }} 
+          />
+        </div>
+        
         <form onSubmit={handleLogin}>
           <input
             className="input"
@@ -60,7 +68,7 @@ export default function Login() {
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
         <div className="auth-alt">
-          Need an account? <Link to="/register">Register</Link>
+          Don't have an account? <Link to="/register">Register</Link>
         </div>
       </div>
     </div>

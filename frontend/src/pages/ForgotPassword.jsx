@@ -48,7 +48,15 @@ export default function ForgotPassword() {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <h2>Reset Password</h2>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <h2 style={{ marginBottom: "16px" }}>Forgot Passsword ?</h2>
+          {/* Replace the src below with your actual logo path */}
+          <img 
+            src="/vite.png" 
+            alt="Logo" 
+            style={{ width: "80px", height: "80px", objectFit: "contain" }} 
+          />
+        </div>
 
         {step === 1 && (
           <form onSubmit={handleRequestOTP}>

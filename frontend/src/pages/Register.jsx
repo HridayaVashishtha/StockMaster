@@ -32,7 +32,16 @@ export default function Register() {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <h2>Register</h2>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <h2 style={{ marginBottom: "16px" }}>Welcome to Stock Master!</h2>
+          {/* Replace the src below with your actual logo path */}
+          <img 
+            src="/vite.png" 
+            alt="Logo" 
+            style={{ width: "80px", height: "80px", objectFit: "contain" }} 
+          />
+        </div>
+        
         <form onSubmit={handleRegister}>
           <input
             className="input"
