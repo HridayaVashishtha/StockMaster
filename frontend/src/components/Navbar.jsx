@@ -7,13 +7,14 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const [openSettings, setOpenSettings] = useState(false);
 
   const items = [
     { label: "Dashboard", to: "/dashboard" },
     { label: "Operations", to: "/operations" },
     { label: "Stock", to: "/stock" },
     { label: "Move History", to: "/history" },
-    { label: "Settings", to: "/settings" }
+    { label: "Settings", to: "#" }
   ];
 
   const active = (to) => location.pathname.startsWith(to);
@@ -44,6 +45,7 @@ const Navbar = () => {
   };
 
   return (
+    <>
     <nav
       style={{
         backgroundColor: colors.brown,
@@ -55,23 +57,103 @@ const Navbar = () => {
       }}
     >
       <div style={{ display: "flex", gap: "32px" }}>
-        {items.map(({ label, to }) => (
-          <Link
-            key={label}
-            to={to}
+        {items.map(({ label, to }) => {
+            if (label === "Settings") {
+                return (
+                <span
+                    key={label}
+                    onClick={() => setOpenSettings(true)}   // <<< OPEN POPUP
+                    style={{
+                    color: colors.cream,
+                    textDecoration: "none",
+                    fontSize: "14px",
+                    fontWeight: active("/settings") ? "700" : "500",
+                    padding: "8px 4px",
+                    borderBottom: active("/settings")
+                        ? `2px solid ${colors.gold}`
+                        : "2px solid transparent",
+                    transition: "all 0.2s",
+                    cursor: "pointer"
+                    }}
+                >
+                    {label}
+                </span>
+                );
+            }
+
+            return (
+                <Link
+                key={label}
+                to={to}
+                style={{
+                    color: colors.cream,
+                    textDecoration: "none",
+                    fontSize: "14px",
+                    fontWeight: active(to) ? "700" : "500",
+                    padding: "8px 4px",
+                    borderBottom: active(to)
+                    ? `2px solid ${colors.gold}`
+                    : "2px solid transparent",
+                    transition: "all 0.2s"
+                }}
+                >
+                {label}
+                </Link>
+            );
+            })}
+
+
+        {/* Settings Dropdown */}
+        {location.pathname.startsWith("/settings") && (
+        <div
             style={{
-              color: colors.cream,
-              textDecoration: "none",
-              fontSize: "14px",
-              fontWeight: active(to) ? "700" : "500",
-              padding: "8px 4px",
-              borderBottom: active(to) ? `2px solid ${colors.gold}` : "2px solid transparent",
-              transition: "all 0.2s"
+            position: "absolute",
+            marginTop: "40px",
+            background: "white",
+            border: `2px solid ${colors.brown}`,
+            borderRadius: "8px",
+            padding: "8px 0",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
             }}
-          >
-            {label}
-          </Link>
-        ))}
+        >
+            <button
+            onClick={() => navigate("/warehouse")}
+            style={{
+                padding: "10px 16px",
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                background: "white",
+                border: "none",
+                color: colors.brown,
+                fontSize: "14px",
+                cursor: "pointer"
+            }}
+            >
+            Warehouse
+            </button>
+
+            <button
+            onClick={() => navigate("/location")}
+            style={{
+                padding: "10px 16px",
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                background: "white",
+                border: "none",
+                color: colors.brown,
+                fontSize: "14px",
+                cursor: "pointer",
+                borderTop: `1px solid ${colors.sage}`
+            }}
+            >
+            Location
+            </button>
+        </div>
+        )}
+
+
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px", position: "relative" }} ref={menuRef}>
@@ -161,6 +243,73 @@ const Navbar = () => {
         )}
       </div>
     </nav>
+
+    {/* SETTINGS POPUP HERE */}
+    {openSettings && (
+      <div
+        onClick={() => setOpenSettings(false)}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "rgba(0,0,0,0.4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 2000
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: "#fff",
+            padding: "24px",
+            borderRadius: "10px",
+            minWidth: "260px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.2)"
+          }}
+        >
+          <button
+            onClick={() => {
+              setOpenSettings(false);
+              navigate("/warehouse");
+            }}
+            style={{
+              padding: "10px",
+              border: "1px solid #ccc",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: 600
+            }}
+          >
+            Warehouse
+          </button>
+
+          <button
+            onClick={() => {
+              setOpenSettings(false);
+              navigate("/location");
+            }}
+            style={{
+              padding: "10px",
+              border: "1px solid #ccc",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: 600
+            }}
+          >
+            Location
+          </button>
+        </div>
+      </div>
+    )}
+  </>
+
   );
 };
 
