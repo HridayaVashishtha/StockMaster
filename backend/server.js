@@ -9,6 +9,7 @@ import warehouseRoutes from "./routes/warehouseRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import stockRoutes from "./routes/stockRoutes.js";
 import moveHistoryRoutes from "./routes/moveHistoryRoutes.js";
+import receiptRoutes from "./routes/receiptRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -23,5 +24,6 @@ app.use("/api/warehouses", warehouseRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/move-history", moveHistoryRoutes);
+app.use("/api/receipts", receiptRoutes);
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+app.listen(5000, () => console.log("✅ Server running on port 5000"));
