@@ -13,6 +13,7 @@ import MoveHistory from "./pages/MoveHistory";
 import ReceiptDetails from "./pages/ReceiptDetails";
 import WarehousePage from './pages/WarehousePage';
 import LocationPage from './pages/LocationPage';
+import DeliveryDetails from "./pages/DeliveryDetails";
 
 function App() {
   injectGlobalStyles();
@@ -34,6 +35,7 @@ function App() {
         <Route path="/warehouse" element={<WarehousePage />} />
         <Route path="/location" element={<LocationPage />} />
 
+        <Route path="/delivery/:id" element={<DeliveryDetails />} />
       </Routes>
     </BrowserRouter>
   );

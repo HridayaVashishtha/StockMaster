@@ -1,403 +1,356 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Plus, Printer, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import axios from 'axios';
+import { injectGlobalStyles } from '../styles/colors';
 
 export default function ReceiptDetails() {
-  const [receiptData, setReceiptData] = useState({
-    reference: 'WH/IN/0001',
-    receiveFrom: '',
-    scheduleDate: '',
-    responsible: ''
-  });
+  useEffect(() => { injectGlobalStyles(); }, []);
 
-  const [products, setProducts] = useState([
-    { id: 1, name: '[DESK001] Desk', quantity: 6 }
-  ]);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [receipt, setReceipt] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [editMode, setEditMode] = useState(false);
 
-  const [status, setStatus] = useState('Draft');
+  const token = localStorage.getItem("token");
 
-  const handleInputChange = (field, value) => {
-    setReceiptData(prev => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    if (id) {
+      fetchReceipt();
+    }
+    fetchProducts();
+  }, [id]);
+
+  const fetchReceipt = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/receipts/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReceipt(res.data);
+      setEditMode(res.data.status === "DRAFT" || res.data.status === "WAITING");
+    } catch (error) {
+      console.error("Error fetching receipt:", error);
+      alert("Failed to load receipt");
+      navigate("/receipts");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleProductQuantityChange = (id, quantity) => {
-    setProducts(prev => 
-      prev.map(product => 
-        product.id === id ? { ...product, quantity: parseInt(quantity) || 0 } : product
-      )
-    );
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/products", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProducts(res.data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const updateReceipt = async () => {
+    try {
+      await axios.put(`http://localhost:5000/api/receipts/${id}`, receipt, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Receipt updated successfully");
+      fetchReceipt();
+    } catch (error) {
+      alert(error.response?.data?.error || "Failed to update receipt");
+    }
+  };
+
+  const validateReceipt = async () => {
+    if (!window.confirm("Validate this receipt? This will update stock quantities.")) return;
+    try {
+      await axios.post(`http://localhost:5000/api/receipts/${id}/validate`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Receipt validated and stock updated!");
+      fetchReceipt();
+    } catch (error) {
+      alert(error.response?.data?.error || "Failed to validate receipt");
+    }
+  };
+
+  const cancelReceipt = async () => {
+    if (!window.confirm("Cancel this receipt?")) return;
+    try {
+      await axios.post(`http://localhost:5000/api/receipts/${id}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Receipt cancelled");
+      fetchReceipt();
+    } catch (error) {
+      alert(error.response?.data?.error || "Failed to cancel receipt");
+    }
+  };
+
+  const updateStatus = async (newStatus) => {
+    try {
+      await axios.put(`http://localhost:5000/api/receipts/${id}`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchReceipt();
+    } catch (error) {
+      alert(error.response?.data?.error || "Failed to update status");
+    }
   };
 
   const addNewProduct = () => {
-    const newProduct = {
-      id: products.length + 1,
-      name: '',
-      quantity: 0
-    };
-    setProducts([...products, newProduct]);
+    setReceipt({
+      ...receipt,
+      items: [...receipt.items, { product: null, quantityExpected: 0, quantityReceived: 0 }]
+    });
   };
 
-  const styles = {
-    pageWrapper: {
-      minHeight: '100vh',
-      backgroundColor: '#F8E1B7'
-    },
-    container: {
-      maxWidth: '1400px',
-      margin: '0 auto',
-      padding: '40px'
-    },
-    header: {
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      padding: '24px 32px',
-      marginBottom: '24px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: '16px'
-    },
-    pageTitle: {
-      fontSize: '28px',
-      fontWeight: '700',
-      color: '#B8592A',
-      margin: 0
-    },
-    newButton: {
-      backgroundColor: '#B6CBBD',
-      color: '#1f2937',
-      padding: '10px 24px',
-      borderRadius: '8px',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '15px',
-      fontWeight: '600',
-      transition: 'all 0.2s'
-    },
-    actionBar: {
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      padding: '20px 32px',
-      marginBottom: '24px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: '16px'
-    },
-    leftButtons: {
-      display: 'flex',
-      gap: '12px',
-      flexWrap: 'wrap'
-    },
-    button: {
-      padding: '10px 20px',
-      borderRadius: '8px',
-      border: '2px solid #B8592A',
-      cursor: 'pointer',
-      fontSize: '15px',
-      fontWeight: '600',
-      transition: 'all 0.2s',
-      backgroundColor: 'white',
-      color: '#B8592A'
-    },
-    statusBar: {
-      display: 'flex',
-      gap: '12px',
-      alignItems: 'center'
-    },
-    statusBadge: {
-      padding: '8px 20px',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.2s'
-    },
-    statusDraft: {
-      backgroundColor: '#FEF3C7',
-      color: '#92400E',
-      border: '2px solid #F59E0B'
-    },
-    statusReady: {
-      backgroundColor: '#DBEAFE',
-      color: '#1E40AF',
-      border: '2px solid #3B82F6'
-    },
-    statusDone: {
-      backgroundColor: '#D1FAE5',
-      color: '#065F46',
-      border: '2px solid #10B981'
-    },
-    detailsCard: {
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      padding: '32px',
-      marginBottom: '24px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-    },
-    reference: {
-      fontSize: '22px',
-      fontWeight: '700',
-      color: '#B8592A',
-      marginBottom: '32px'
-    },
-    formGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '24px',
-      marginBottom: '32px'
-    },
-    formGroup: {
-      display: 'flex',
-      flexDirection: 'column'
-    },
-    label: {
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#B8592A',
-      marginBottom: '8px'
-    },
-    input: {
-      width: '100%',
-      padding: '12px 16px',
-      border: '2px solid #B8592A',
-      borderRadius: '0',
-      fontSize: '15px',
-      outline: 'none',
-      transition: 'border-color 0.2s',
-      boxSizing: 'border-box',
-      backgroundColor: 'white'
-    },
-    sectionTitle: {
-      fontSize: '20px',
-      fontWeight: '700',
-      color: '#B8592A',
-      marginBottom: '20px',
-      paddingBottom: '12px',
-      borderBottom: '2px solid #B8592A'
-    },
-    productsTable: {
-      width: '100%',
-      borderCollapse: 'collapse',
-      marginBottom: '20px'
-    },
-    tableHeader: {
-      borderBottom: '2px solid #B8592A'
-    },
-    th: {
-      padding: '12px 16px',
-      textAlign: 'left',
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#B8592A'
-    },
-    td: {
-      padding: '16px',
-      fontSize: '15px',
-      color: '#374151',
-      borderBottom: '1px solid #F3E5D5'
-    },
-    productName: {
-      color: '#B8592A',
-      fontWeight: '500'
-    },
-    quantityInput: {
-      width: '80px',
-      padding: '8px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      fontSize: '15px',
-      outline: 'none',
-      textAlign: 'center'
-    },
-    addProductButton: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '10px 20px',
-      backgroundColor: 'white',
-      color: '#B8592A',
-      border: '2px solid #B8592A',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontSize: '15px',
-      fontWeight: '600',
-      transition: 'all 0.2s'
+  const updateItem = (index, field, value) => {
+    const updated = [...receipt.items];
+    updated[index][field] = value;
+    setReceipt({ ...receipt, items: updated });
+  };
+
+  const removeItem = (index) => {
+    setReceipt({
+      ...receipt,
+      items: receipt.items.filter((_, i) => i !== index)
+    });
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p>Loading receipt...</p>
+        </div>
+      </>
+    );
+  }
+
+  if (!receipt) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p>Receipt not found</p>
+        </div>
+      </>
+    );
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'DRAFT': return { bg: '#FEF3C7', color: '#92400E', border: '#F59E0B' };
+      case 'WAITING': return { bg: '#E0E7FF', color: '#3730A3', border: '#6366F1' };
+      case 'READY': return { bg: '#DBEAFE', color: '#1E40AF', border: '#3B82F6' };
+      case 'DONE': return { bg: '#D1FAE5', color: '#065F46', border: '#10B981' };
+      case 'CANCELLED': return { bg: '#FEE2E2', color: '#991B1B', border: '#EF4444' };
+      default: return { bg: '#F3F4F6', color: '#374151', border: '#9CA3AF' };
     }
   };
+
+  const statusColors = getStatusColor(receipt.status);
 
   return (
     <>
       <Navbar />
-      <div style={styles.pageWrapper}>
-        <div style={styles.container}>
+      <div style={{ minHeight: '100vh', background: 'var(--cream)', padding: '40px' }}>
+        <div className="container" style={{ maxWidth: 1400 }}>
           {/* Header */}
-          <div style={styles.header}>
-            <h1 style={styles.pageTitle}>Receipt</h1>
-            <button 
-              style={styles.newButton}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#a3baa9'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#B6CBBD'}
-            >
-              New
-            </button>
+          <div className="card" style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--brown)', margin: 0 }}>Receipt</h1>
+              <button className="btn btn-primary" onClick={() => navigate("/receipts/new")}>
+                New
+              </button>
+            </div>
           </div>
 
           {/* Action Bar */}
-          <div style={styles.actionBar}>
-            <div style={styles.leftButtons}>
-              <button 
-                style={styles.button}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#B8592A';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white';
-                  e.currentTarget.style.color = '#B8592A';
-                }}
-              >
-                Validate
-              </button>
-              <button 
-                style={styles.button}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#B8592A';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white';
-                  e.currentTarget.style.color = '#B8592A';
-                }}
-              >
-                Print
-              </button>
-              <button 
-                style={styles.button}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#B8592A';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white';
-                  e.currentTarget.style.color = '#B8592A';
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+          <div className="card" style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {receipt.status !== "DONE" && receipt.status !== "CANCELLED" && (
+                  <>
+                    <button className="btn btn-primary" onClick={validateReceipt}>
+                      Validate
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => window.print()}>
+                      <Printer size={16} /> Print
+                    </button>
+                    <button className="btn btn-cancel" onClick={cancelReceipt}>
+                      <X size={16} /> Cancel
+                    </button>
+                  </>
+                )}
+              </div>
 
-            <div style={styles.statusBar}>
-              <span 
-                style={{...styles.statusBadge, ...styles.statusDraft}}
-                onClick={() => setStatus('Draft')}
-              >
-                Draft
-              </span>
-              <span style={{ color: '#B8592A', fontSize: '18px' }}>{'>'}</span>
-              <span 
-                style={{...styles.statusBadge, ...styles.statusReady}}
-                onClick={() => setStatus('Ready')}
-              >
-                Ready
-              </span>
-              <span style={{ color: '#B8592A', fontSize: '18px' }}>{'>'}</span>
-              <span 
-                style={{...styles.statusBadge, ...styles.statusDone}}
-                onClick={() => setStatus('Done')}
-              >
-                Done
-              </span>
+              {/* Status Flow */}
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                {['DRAFT', 'READY', 'DONE'].map((status, idx) => (
+                  <React.Fragment key={status}>
+                    <span
+                      style={{
+                        padding: '8px 20px',
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: receipt.status !== 'DONE' && receipt.status !== 'CANCELLED' ? 'pointer' : 'default',
+                        backgroundColor: getStatusColor(status).bg,
+                        color: getStatusColor(status).color,
+                        border: `2px solid ${getStatusColor(status).border}`,
+                        opacity: receipt.status === status ? 1 : 0.5
+                      }}
+                      onClick={() => {
+                        if (receipt.status !== 'DONE' && receipt.status !== 'CANCELLED') {
+                          updateStatus(status);
+                        }
+                      }}
+                    >
+                      {status}
+                    </span>
+                    {idx < 2 && <span style={{ color: 'var(--brown)', fontSize: 18 }}>{'>'}</span>}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Details Card */}
-          <div style={styles.detailsCard}>
-            <div style={styles.reference}>{receiptData.reference}</div>
+          <div className="card">
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--brown)', marginBottom: 32 }}>
+              {receipt.reference}
+            </div>
 
-            <div style={styles.formGrid}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Receive From</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, marginBottom: 32 }}>
+              <div className="profile-field">
+                <label className="profile-label">Receive From</label>
                 <input
-                  type="text"
-                  value={receiptData.receiveFrom}
-                  onChange={(e) => handleInputChange('receiveFrom', e.target.value)}
-                  style={styles.input}
-                  placeholder=""
+                  className="input"
+                  value={receipt.supplier}
+                  onChange={(e) => setReceipt({ ...receipt, supplier: e.target.value })}
+                  disabled={!editMode}
                 />
               </div>
 
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Schedule Date</label>
+              <div className="profile-field">
+                <label className="profile-label">Schedule Date</label>
                 <input
                   type="date"
-                  value={receiptData.scheduleDate}
-                  onChange={(e) => handleInputChange('scheduleDate', e.target.value)}
-                  style={styles.input}
+                  className="input"
+                  value={receipt.scheduleDate ? new Date(receipt.scheduleDate).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setReceipt({ ...receipt, scheduleDate: e.target.value })}
+                  disabled={!editMode}
                 />
               </div>
 
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Responsible</label>
+              <div className="profile-field">
+                <label className="profile-label">Responsible</label>
                 <input
-                  type="text"
-                  value={receiptData.responsible}
-                  onChange={(e) => handleInputChange('responsible', e.target.value)}
-                  style={styles.input}
-                  placeholder=""
+                  className="input"
+                  value={receipt.responsible || ''}
+                  onChange={(e) => setReceipt({ ...receipt, responsible: e.target.value })}
+                  disabled={!editMode}
+                />
+              </div>
+
+              <div className="profile-field">
+                <label className="profile-label">To Location</label>
+                <input
+                  className="input"
+                  value={receipt.toLocation}
+                  onChange={(e) => setReceipt({ ...receipt, toLocation: e.target.value })}
+                  disabled={!editMode}
                 />
               </div>
             </div>
 
             {/* Products Section */}
-            <div style={styles.sectionTitle}>Products</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--brown)', marginBottom: 20, paddingBottom: 12, borderBottom: '2px solid var(--brown)' }}>
+              Products
+            </div>
 
-            <table style={styles.productsTable}>
-              <thead style={styles.tableHeader}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+              <thead style={{ background: 'var(--brown)' }}>
                 <tr>
-                  <th style={styles.th}>Product</th>
-                  <th style={styles.th}>Quantity</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: 'white', fontWeight: 600, fontSize: 14 }}>
+                    Product
+                  </th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: 'white', fontWeight: 600, fontSize: 14 }}>
+                    Quantity Expected
+                  </th>
+                  {receipt.status === 'DONE' && (
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: 'white', fontWeight: 600, fontSize: 14 }}>
+                      Quantity Received
+                    </th>
+                  )}
+                  {editMode && (
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: 'white', fontWeight: 600, fontSize: 14 }}>
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td style={{...styles.td, ...styles.productName}}>
-                      {product.name}
+                {receipt.items.map((item, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--cream)' }}>
+                    <td style={{ padding: '16px', color: 'var(--brown)', fontWeight: 500 }}>
+                      {editMode ? (
+                        <select
+                          className="select"
+                          value={item.product?._id || ''}
+                          onChange={(e) => updateItem(idx, 'product', e.target.value)}
+                        >
+                          <option value="">Select Product</option>
+                          {products.map(p => (
+                            <option key={p._id} value={p._id}>{p.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        item.product?.name || '-'
+                      )}
                     </td>
-                    <td style={styles.td}>
+                    <td style={{ padding: '16px' }}>
                       <input
                         type="number"
-                        value={product.quantity}
-                        onChange={(e) => handleProductQuantityChange(product.id, e.target.value)}
-                        style={styles.quantityInput}
-                        min="0"
+                        className="input"
+                        value={item.quantityExpected}
+                        onChange={(e) => updateItem(idx, 'quantityExpected', Number(e.target.value))}
+                        disabled={!editMode}
+                        style={{ width: 100, textAlign: 'center' }}
                       />
                     </td>
+                    {receipt.status === 'DONE' && (
+                      <td style={{ padding: '16px', fontWeight: 600, color: '#10b981' }}>
+                        {item.quantityReceived} {item.product?.unit}
+                      </td>
+                    )}
+                    {editMode && (
+                      <td style={{ padding: '16px' }}>
+                        <button className="btn btn-cancel" onClick={() => removeItem(idx)} style={{ padding: '6px 10px' }}>
+                          <X size={14} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <button 
-              style={styles.addProductButton}
-              onClick={addNewProduct}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = '#B8592A';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'white';
-                e.currentTarget.style.color = '#B8592A';
-              }}
-            >
-              <Plus size={18} />
-              New Product
-            </button>
+            {editMode && (
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button className="btn btn-secondary" onClick={addNewProduct}>
+                  <Plus size={18} /> New Product
+                </button>
+                <button className="btn btn-primary" onClick={updateReceipt}>
+                  Save Changes
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
