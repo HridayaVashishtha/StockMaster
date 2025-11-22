@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import colors from "../styles/colors";
 
 const Navbar = () => {
@@ -8,26 +9,53 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const [openSettings, setOpenSettings] = useState(false);
+  const settingsRef = useRef(null);
+  const [openOperations, setOpenOperations] = useState(false);
+  const operationsRef = useRef(null);
 
   const items = [
     { label: "Dashboard", to: "/dashboard" },
-    { label: "Operations", to: "/operations" },
+    { label: "Operations", to: "#" },
     { label: "Stock", to: "/stock" },
-    { label: "Move History", to: "/history" },
+    { label: "Move History", to: "/move-history" },
     { label: "Settings", to: "#" }
   ];
 
-  const active = (to) => location.pathname.startsWith(to);
+  const active = (to) => {
+    if (to === "#") return false;
+    return location.pathname.startsWith(to);
+  };
+
+  const isSettingsActive = () => {
+    return location.pathname.startsWith("/warehouse") || location.pathname.startsWith("/location");
+  };
+
+  const isOperationsActive = () => {
+    return location.pathname.startsWith("/receipts") || 
+           location.pathname.startsWith("/deliveries") || 
+           location.pathname.startsWith("/adjustments");
+  };
+
   const initial = (localStorage.getItem("name") || "A").charAt(0).toUpperCase();
 
-  // Close on outside click or Esc
   useEffect(() => {
     const onClick = (e) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(e.target)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+      if (settingsRef.current && !settingsRef.current.contains(e.target)) {
+        setOpenSettings(false);
+      }
+      if (operationsRef.current && !operationsRef.current.contains(e.target)) {
+        setOpenOperations(false);
+      }
     };
     const onKey = (e) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        setOpenSettings(false);
+        setOpenOperations(false);
+      }
     };
     document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKey);
@@ -45,7 +73,6 @@ const Navbar = () => {
   };
 
   return (
-    <>
     <nav
       style={{
         backgroundColor: colors.brown,
@@ -56,118 +83,293 @@ const Navbar = () => {
         borderBottom: `3px solid ${colors.gold}`
       }}
     >
-      <div style={{ display: "flex", gap: "32px" }}>
+      <div style={{ display: "flex", gap: "32px", alignItems: "center" }}>
         {items.map(({ label, to }) => {
-            if (label === "Settings") {
-                return (
-                <span
-                    key={label}
-                    onClick={() => setOpenSettings(true)}   // <<< OPEN POPUP
-                    style={{
+          if (label === "Operations") {
+            return (
+              <div
+                key={label}
+                ref={operationsRef}
+                style={{ position: "relative" }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenOperations(!openOperations);
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
                     color: colors.cream,
-                    textDecoration: "none",
+                    background: "transparent",
+                    border: "none",
                     fontSize: "14px",
-                    fontWeight: active("/settings") ? "700" : "500",
+                    fontWeight: isOperationsActive() ? "700" : "500",
                     padding: "8px 4px",
-                    borderBottom: active("/settings")
-                        ? `2px solid ${colors.gold}`
-                        : "2px solid transparent",
+                    borderBottom: isOperationsActive()
+                      ? `2px solid ${colors.gold}`
+                      : "2px solid transparent",
                     transition: "all 0.2s",
                     cursor: "pointer"
+                  }}
+                >
+                  {label}
+                  <ChevronDown 
+                    size={16} 
+                    style={{
+                      transform: openOperations ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.2s"
                     }}
-                >
-                    {label}
-                </span>
-                );
-            }
+                  />
+                </button>
 
-            return (
-                <Link
-                key={label}
-                to={to}
-                style={{
-                    color: colors.cream,
-                    textDecoration: "none",
-                    fontSize: "14px",
-                    fontWeight: active(to) ? "700" : "500",
-                    padding: "8px 4px",
-                    borderBottom: active(to)
-                    ? `2px solid ${colors.gold}`
-                    : "2px solid transparent",
-                    transition: "all 0.2s"
-                }}
-                >
-                {label}
-                </Link>
+                {openOperations && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      left: 0,
+                      minWidth: "180px",
+                      background: "#fff",
+                      border: `1px solid ${colors.gold}`,
+                      borderRadius: "10px",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                      overflow: "hidden",
+                      zIndex: 1000
+                    }}
+                  >
+                    <Link
+                      to="/receipts"
+                      onClick={() => setOpenOperations(false)}
+                      style={{
+                        display: "block",
+                        padding: "12px 16px",
+                        color: colors.brown,
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: location.pathname.startsWith("/receipts") ? "700" : "500",
+                        background: location.pathname.startsWith("/receipts") ? colors.cream : "white",
+                        borderBottom: `1px solid ${colors.cream}`,
+                        transition: "background 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!location.pathname.startsWith("/receipts")) {
+                          e.target.style.background = colors.cream;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!location.pathname.startsWith("/receipts")) {
+                          e.target.style.background = "white";
+                        }
+                      }}
+                    >
+                      Receipt
+                    </Link>
+                    <Link
+                      to="/deliveries"
+                      onClick={() => setOpenOperations(false)}
+                      style={{
+                        display: "block",
+                        padding: "12px 16px",
+                        color: colors.brown,
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: location.pathname.startsWith("/deliveries") ? "700" : "500",
+                        background: location.pathname.startsWith("/deliveries") ? colors.cream : "white",
+                        borderBottom: `1px solid ${colors.cream}`,
+                        transition: "background 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!location.pathname.startsWith("/deliveries")) {
+                          e.target.style.background = colors.cream;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!location.pathname.startsWith("/deliveries")) {
+                          e.target.style.background = "white";
+                        }
+                      }}
+                    >
+                      Delivery
+                    </Link>
+                    <Link
+                      to="/adjustments"
+                      onClick={() => setOpenOperations(false)}
+                      style={{
+                        display: "block",
+                        padding: "12px 16px",
+                        color: colors.brown,
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: location.pathname.startsWith("/adjustments") ? "700" : "500",
+                        background: location.pathname.startsWith("/adjustments") ? colors.cream : "white",
+                        transition: "background 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!location.pathname.startsWith("/adjustments")) {
+                          e.target.style.background = colors.cream;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!location.pathname.startsWith("/adjustments")) {
+                          e.target.style.background = "white";
+                        }
+                      }}
+                    >
+                      Adjustment
+                    </Link>
+                  </div>
+                )}
+              </div>
             );
-            })}
+          }
 
+          if (label === "Settings") {
+            return (
+              <div
+                key={label}
+                ref={settingsRef}
+                style={{ position: "relative" }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenSettings(!openSettings);
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    color: colors.cream,
+                    background: "transparent",
+                    border: "none",
+                    fontSize: "14px",
+                    fontWeight: isSettingsActive() ? "700" : "500",
+                    padding: "8px 4px",
+                    borderBottom: isSettingsActive()
+                      ? `2px solid ${colors.gold}`
+                      : "2px solid transparent",
+                    transition: "all 0.2s",
+                    cursor: "pointer"
+                  }}
+                >
+                  {label}
+                  <ChevronDown 
+                    size={16} 
+                    style={{
+                      transform: openSettings ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.2s"
+                    }}
+                  />
+                </button>
 
-        {/* Settings Dropdown */}
-        {location.pathname.startsWith("/settings") && (
-        <div
-            style={{
-            position: "absolute",
-            marginTop: "40px",
-            background: "white",
-            border: `2px solid ${colors.brown}`,
-            borderRadius: "8px",
-            padding: "8px 0",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-            }}
-        >
-            <button
-            onClick={() => navigate("/warehouse")}
-            style={{
-                padding: "10px 16px",
-                display: "block",
-                width: "100%",
-                textAlign: "left",
-                background: "white",
-                border: "none",
-                color: colors.brown,
+                {openSettings && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      left: 0,
+                      minWidth: "180px",
+                      background: "#fff",
+                      border: `1px solid ${colors.gold}`,
+                      borderRadius: "10px",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                      overflow: "hidden",
+                      zIndex: 1000
+                    }}
+                  >
+                    <Link
+                      to="/warehouse"
+                      onClick={() => setOpenSettings(false)}
+                      style={{
+                        display: "block",
+                        padding: "12px 16px",
+                        color: colors.brown,
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: location.pathname.startsWith("/warehouse") ? "700" : "500",
+                        background: location.pathname.startsWith("/warehouse") ? colors.cream : "white",
+                        borderBottom: `1px solid ${colors.cream}`,
+                        transition: "background 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!location.pathname.startsWith("/warehouse")) {
+                          e.target.style.background = colors.cream;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!location.pathname.startsWith("/warehouse")) {
+                          e.target.style.background = "white";
+                        }
+                      }}
+                    >
+                      Warehouse
+                    </Link>
+                    <Link
+                      to="/location"
+                      onClick={() => setOpenSettings(false)}
+                      style={{
+                        display: "block",
+                        padding: "12px 16px",
+                        color: colors.brown,
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: location.pathname.startsWith("/location") ? "700" : "500",
+                        background: location.pathname.startsWith("/location") ? colors.cream : "white",
+                        transition: "background 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!location.pathname.startsWith("/location")) {
+                          e.target.style.background = colors.cream;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!location.pathname.startsWith("/location")) {
+                          e.target.style.background = "white";
+                        }
+                      }}
+                    >
+                      Location
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={label}
+              to={to}
+              style={{
+                color: colors.cream,
+                textDecoration: "none",
                 fontSize: "14px",
-                cursor: "pointer"
-            }}
+                fontWeight: active(to) ? "700" : "500",
+                padding: "8px 4px",
+                borderBottom: active(to)
+                  ? `2px solid ${colors.gold}`
+                  : "2px solid transparent",
+                transition: "all 0.2s"
+              }}
             >
-            Warehouse
-            </button>
-
-            <button
-            onClick={() => navigate("/location")}
-            style={{
-                padding: "10px 16px",
-                display: "block",
-                width: "100%",
-                textAlign: "left",
-                background: "white",
-                border: "none",
-                color: colors.brown,
-                fontSize: "14px",
-                cursor: "pointer",
-                borderTop: `1px solid ${colors.sage}`
-            }}
-            >
-            Location
-            </button>
-        </div>
-        )}
-
-
+              {label}
+            </Link>
+          );
+        })}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px", position: "relative" }} ref={menuRef}>
         <span style={{ color: colors.cream, fontSize: "16px", fontWeight: "600" }}>
-          {items.find(i => active(i.to))?.label || "Dashboard"}
+          {items.find(i => active(i.to))?.label || 
+           (isSettingsActive() ? "Settings" : 
+            isOperationsActive() ? "Operations" : "Dashboard")}
         </span>
 
-        {/* Profile trigger */}
         <button
           type="button"
-          aria-haspopup="menu"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          title="Profile menu"
+          onClick={() => setOpen(!open)}
           style={{
             width: "36px",
             height: "36px",
@@ -186,10 +388,8 @@ const Navbar = () => {
           {initial}
         </button>
 
-        {/* Dropdown */}
         {open && (
           <div
-            role="menu"
             style={{
               position: "absolute",
               right: 0,
@@ -204,7 +404,6 @@ const Navbar = () => {
             }}
           >
             <Link
-              role="menuitem"
               to="/profile"
               onClick={() => setOpen(false)}
               style={{
@@ -222,7 +421,6 @@ const Navbar = () => {
               My Profile
             </Link>
             <button
-              role="menuitem"
               onClick={handleLogout}
               style={{
                 display: "flex",
@@ -243,73 +441,6 @@ const Navbar = () => {
         )}
       </div>
     </nav>
-
-    {/* SETTINGS POPUP HERE */}
-    {openSettings && (
-      <div
-        onClick={() => setOpenSettings(false)}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          background: "rgba(0,0,0,0.4)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2000
-        }}
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            background: "#fff",
-            padding: "24px",
-            borderRadius: "10px",
-            minWidth: "260px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)"
-          }}
-        >
-          <button
-            onClick={() => {
-              setOpenSettings(false);
-              navigate("/warehouse");
-            }}
-            style={{
-              padding: "10px",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontWeight: 600
-            }}
-          >
-            Warehouse
-          </button>
-
-          <button
-            onClick={() => {
-              setOpenSettings(false);
-              navigate("/location");
-            }}
-            style={{
-              padding: "10px",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontWeight: 600
-            }}
-          >
-            Location
-          </button>
-        </div>
-      </div>
-    )}
-  </>
-
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2, X, Package, TrendingUp } from "lucide-react";
 import Navbar from "../components/Navbar";
 import axios from "axios";
 import { injectGlobalStyles } from "../styles/colors";
@@ -62,17 +62,40 @@ const ReceiptsPage = () => {
       return alert("Supplier and at least one item required");
     }
 
+    // Validate all items have product and quantity
+    const invalidItems = newReceipt.items.filter(
+      item => !item.product || !item.quantityExpected || item.quantityExpected <= 0
+    );
+
+    if (invalidItems.length > 0) {
+      return alert("All items must have a product and valid quantity");
+    }
+
     try {
-      const res = await axios.post("http://localhost:5000/api/receipts", newReceipt, {
+      const payload = {
+        supplier: newReceipt.supplier,
+        toLocation: newReceipt.toLocation || "WH/Stock1",
+        scheduleDate: newReceipt.scheduleDate || new Date().toISOString().split('T')[0],
+        responsible: newReceipt.responsible || "",
+        items: newReceipt.items.map(item => ({
+          product: item.product,
+          quantityExpected: Number(item.quantityExpected)
+        }))
+      };
+
+      console.log("Creating receipt with payload:", payload); // Debug log
+
+      const res = await axios.post("http://localhost:5000/api/receipts", payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
       fetchReceipts();
       setShowNewModal(false);
       setNewReceipt({ supplier: "", toLocation: "WH/Stock1", scheduleDate: "", responsible: "", items: [] });
-      // Navigate to the details page
       navigate(`/receipt/${res.data.receipt._id}`);
     } catch (error) {
-      alert(error.response?.data?.error || "Failed to create receipt");
+      console.error("Create receipt error:", error.response?.data || error);
+      alert(error.response?.data?.error || error.response?.data?.message || "Failed to create receipt");
     }
   };
 
@@ -118,8 +141,8 @@ const ReceiptsPage = () => {
     return (
       <>
         <Navbar />
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p>Loading receipts...</p>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)' }}>
+          <p style={{ color: 'var(--brown)' }}>Loading receipts...</p>
         </div>
       </>
     );
@@ -217,93 +240,218 @@ const ReceiptsPage = () => {
         </div>
       </main>
 
-      {/* New Receipt Modal */}
+      {/* New Receipt Modal - Improved Compact */}
       {showNewModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: 700 }}>
-            <div className="modal-header">
-              <h3>Create New Receipt</h3>
-              <button onClick={() => setShowNewModal(false)} className="modal-close">×</button>
+        <div
+          onClick={() => setShowNewModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+            backdropFilter: "blur(4px)"
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              width: 580,
+              maxWidth: "94vw",
+              maxHeight: "90vh",
+              overflow: "hidden",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              padding: "20px 24px",
+              borderBottom: "2px solid var(--cream)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "var(--cream)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "var(--gold)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <TrendingUp size={20} color="var(--brown)" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--brown)" }}>New Receipt</h3>
+                  <p style={{ margin: 0, fontSize: 12, color: "#666" }}>Create a new receipt order</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNewModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 6,
+                  borderRadius: 8,
+                  transition: "background 0.2s"
+                }}
+                onMouseEnter={(e) => e.target.style.background = "#f0f0f0"}
+                onMouseLeave={(e) => e.target.style.background = "transparent"}
+              >
+                <X size={20} color="#666" />
+              </button>
             </div>
-            <div className="modal-body">
-              <div className="profile-field">
-                <label className="profile-label">Supplier Name</label>
-                <input
-                  className="input"
-                  value={newReceipt.supplier}
-                  onChange={(e) => setNewReceipt({ ...newReceipt, supplier: e.target.value })}
-                  placeholder="e.g. Azure Interior"
-                />
-              </div>
-              <div className="profile-field">
-                <label className="profile-label">To Location</label>
-                <input
-                  className="input"
-                  value={newReceipt.toLocation}
-                  onChange={(e) => setNewReceipt({ ...newReceipt, toLocation: e.target.value })}
-                />
-              </div>
-              <div className="profile-field">
-                <label className="profile-label">Responsible</label>
-                <input
-                  className="input"
-                  value={newReceipt.responsible}
-                  onChange={(e) => setNewReceipt({ ...newReceipt, responsible: e.target.value })}
-                  placeholder="e.g. John Doe"
-                />
-              </div>
-              <div className="profile-field">
-                <label className="profile-label">Schedule Date (Optional)</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={newReceipt.scheduleDate}
-                  onChange={(e) => setNewReceipt({ ...newReceipt, scheduleDate: e.target.value })}
-                />
+
+            {/* Body - Scrollable */}
+            <div style={{ padding: "20px 24px", overflowY: "auto", flex: 1 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                {/* Supplier */}
+                <div style={{ gridColumn: "1 / span 2" }}>
+                  <label className="form-label" style={{ fontWeight: 600, marginBottom: 6, display: "block", color: "var(--brown)", fontSize: 13 }}>
+                    Supplier <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    value={newReceipt.supplier}
+                    onChange={(e) => setNewReceipt({ ...newReceipt, supplier: e.target.value })}
+                    placeholder="e.g. Azure Interior"
+                    style={{ fontSize: 14 }}
+                  />
+                </div>
+
+                {/* To Location */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 600, marginBottom: 6, display: "block", color: "var(--brown)", fontSize: 13 }}>
+                    To Location
+                  </label>
+                  <input
+                    className="form-input"
+                    value={newReceipt.toLocation}
+                    onChange={(e) => setNewReceipt({ ...newReceipt, toLocation: e.target.value })}
+                    style={{ fontSize: 14 }}
+                  />
+                </div>
+
+                {/* Responsible */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 600, marginBottom: 6, display: "block", color: "var(--brown)", fontSize: 13 }}>
+                    Responsible
+                  </label>
+                  <input
+                    className="form-input"
+                    value={newReceipt.responsible}
+                    onChange={(e) => setNewReceipt({ ...newReceipt, responsible: e.target.value })}
+                    placeholder="e.g. John Doe"
+                    style={{ fontSize: 14 }}
+                  />
+                </div>
+
+                {/* Schedule Date */}
+                <div style={{ gridColumn: "1 / span 2" }}>
+                  <label className="form-label" style={{ fontWeight: 600, marginBottom: 6, display: "block", color: "var(--brown)", fontSize: 13 }}>
+                    Schedule Date
+                  </label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={newReceipt.scheduleDate}
+                    onChange={(e) => setNewReceipt({ ...newReceipt, scheduleDate: e.target.value })}
+                    style={{ fontSize: 14 }}
+                  />
+                </div>
               </div>
 
-              <h4 style={{ marginTop: 20, marginBottom: 12, color: "var(--brown)" }}>Items</h4>
-              {newReceipt.items.map((item, idx) => (
-                <div key={idx} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "end" }}>
-                  <div style={{ flex: 1 }}>
-                    <label className="profile-label">Product</label>
-                    <select
-                      className="select"
-                      value={item.product}
-                      onChange={(e) => updateReceiptItem(idx, "product", e.target.value)}
-                    >
-                      <option value="">Select Product</option>
-                      {products.map((p) => (
-                        <option key={p._id} value={p._id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ width: 120 }}>
-                    <label className="profile-label">Quantity</label>
-                    <input
-                      type="number"
-                      className="input"
-                      value={item.quantityExpected}
-                      onChange={(e) => updateReceiptItem(idx, "quantityExpected", Number(e.target.value))}
-                    />
-                  </div>
-                  <button className="btn btn-cancel" onClick={() => removeReceiptItem(idx)} style={{ padding: "8px 12px" }}>
-                    <Trash2 size={14} />
+              {/* Items Section */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #eee" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <h4 style={{ margin: 0, color: "var(--brown)", fontSize: 14, fontWeight: 600 }}>
+                    <Package size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
+                    Items <span style={{ color: "#ef4444" }}>*</span>
+                  </h4>
+                  <button className="btn btn-secondary" onClick={addItemToReceipt} style={{ fontSize: 12, padding: "5px 10px" }}>
+                    <Plus size={13} /> Add
                   </button>
                 </div>
-              ))}
-              <button className="btn btn-secondary" onClick={addItemToReceipt} style={{ marginTop: 8 }}>
-                <Plus size={14} /> Add Item
-              </button>
+
+                {newReceipt.items.length === 0 ? (
+                  <div style={{ padding: 20, textAlign: "center", background: "var(--cream)", borderRadius: 8, color: "#999", fontSize: 13 }}>
+                    No items added
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {newReceipt.items.map((item, idx) => (
+                      <div key={idx} style={{ display: "flex", gap: 8, alignItems: "end", padding: 10, background: "var(--cream)", borderRadius: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>Product</label>
+                          <select
+                            className="form-input"
+                            value={item.product}
+                            onChange={(e) => updateReceiptItem(idx, "product", e.target.value)}
+                            style={{ fontSize: 13, padding: "6px 10px" }}
+                          >
+                            <option value="">Select Product</option>
+                            {products.map((p) => (
+                              <option key={p._id} value={p._id}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div style={{ width: 90 }}>
+                          <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>Qty</label>
+                          <input
+                            type="number"
+                            className="form-input"
+                            value={item.quantityExpected}
+                            onChange={(e) => updateReceiptItem(idx, "quantityExpected", Number(e.target.value))}
+                            style={{ fontSize: 13, padding: "6px 10px" }}
+                          />
+                        </div>
+                        <button 
+                          className="btn btn-danger" 
+                          onClick={() => removeReceiptItem(idx)} 
+                          style={{ padding: "6px 8px", fontSize: 12 }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowNewModal(false)} className="btn btn-cancel">
+
+            {/* Footer */}
+            <div style={{
+              padding: "14px 24px",
+              borderTop: "1px solid #eee",
+              display: "flex",
+              gap: 10,
+              background: "#fafafa"
+            }}>
+              <button 
+                onClick={() => setShowNewModal(false)} 
+                className="btn btn-secondary"
+                style={{ flex: 1, padding: "8px 16px", fontSize: 14 }}
+              >
                 Cancel
               </button>
-              <button onClick={createReceipt} className="btn btn-primary">
-                Create Receipt
+              <button 
+                onClick={createReceipt} 
+                className="btn btn-primary"
+                style={{ flex: 1, padding: "8px 16px", fontSize: 14 }}
+              >
+                <Plus size={15} /> Create
               </button>
             </div>
           </div>

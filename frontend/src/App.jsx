@@ -11,8 +11,11 @@ import WarehousePage from './pages/WarehousePage';
 import LocationPage from './pages/LocationPage';
 import DeliveryPage from "./pages/DeliveryPage";
 import DeliveryDetails from "./pages/DeliveryDetails";
+import AdjustmentsPage from "./pages/AdjustmentsPage";
 import Landing from "./pages/Landing";
 import ForgotPassword from "./pages/ForgotPassword";
+import ProductsPage from "./pages/ProductsPage";
+import ProductDetails from "./pages/ProductDetails";
 
 function App() {
   const isAuthenticated = !!localStorage.getItem("token");
@@ -66,6 +69,18 @@ function App() {
         <Route
           path="/delivery/:id"
           element={isAuthenticated ? <DeliveryDetails /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/adjustments"
+          element={isAuthenticated ? <AdjustmentsPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/products"
+          element={isAuthenticated ? <ProductsPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/product/:id"
+          element={isAuthenticated ? <ProductDetails /> : <Navigate to="/login" />}
         />
       </Routes>
     </Router>

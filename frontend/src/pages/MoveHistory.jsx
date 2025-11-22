@@ -143,7 +143,7 @@ export default function MoveHistory() {
             </div>
           </div>
 
-            {/* Filters / Actions */}
+          {/* Filters / Actions */}
           <div className="card print-hide" style={{ marginBottom:24, padding:'20px 28px' }}>
             <div style={{ display:'flex', gap:16, flexWrap:'wrap', alignItems:'center' }}>
               <div style={{ flex:1, minWidth:280, position:'relative' }}>
@@ -233,16 +233,6 @@ export default function MoveHistory() {
                 )}
               </tbody>
             </table>
-          </div>
-
-          <div className="card print-hide" style={{ marginTop:28, background:'var(--cream)', borderColor:'var(--brown)' }}>
-            <h3 style={{ fontSize:16, fontWeight:700, color:'var(--brown)', marginBottom:12 }}>Important Notes</h3>
-            <ul style={{ margin:0, paddingLeft:20, color:'#997644', fontSize:13, lineHeight:1.8 }}>
-              <li>Receipt (IN) moves are green</li>
-              <li>Delivery (OUT) moves are red</li>
-              <li>Each move updates stock levels</li>
-              <li>All moves logged for audit trail</li>
-            </ul>
           </div>
         </div>
       </div>

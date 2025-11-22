@@ -6,22 +6,21 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  getProductHistory,
-  bulkStockUpdate,
-  addStockToProduct
+  addStockToProduct,
 } from "../controllers/productController.js";
 
 const router = express.Router();
 
+// Read
 router.get("/", auth, getAllProducts);
 router.get("/:id", auth, getProductById);
+
+// Create/Update/Delete
 router.post("/", auth, createProduct);
 router.put("/:id", auth, updateProduct);
 router.delete("/:id", auth, deleteProduct);
-router.get("/:id/history", auth, getProductHistory);
 
-// New routes for stock operations
-router.post("/bulk-stock", auth, bulkStockUpdate);
+// Add stock
 router.post("/:id/add-stock", auth, addStockToProduct);
 
 export default router;

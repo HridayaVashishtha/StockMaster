@@ -154,34 +154,31 @@ export const bulkStockUpdate = async (req, res) => {
   }
 };
 
-// Add stock to existing product (simpler single-product version)
+// Add stock to existing product
 export const addStockToProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity, warehouse } = req.body;
+    const { quantity } = req.body;
+
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ error: "Valid quantity required" });
+    }
 
     const product = await Product.findById(id);
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
 
-    const previousOnHand = product.onHand;
-    product.onHand += quantity;
-    product.freeToUse += quantity;
+    product.onHand += Number(quantity);
+    product.freeToUse += Number(quantity);
     await product.save();
 
-    // Log addition
-    await StockLedger.create({
-      product: id,
-      warehouse: warehouse || null,
-      type: "RECEIPT",
-      reference: "Stock addition",
-      quantity,
-      previousQuantity: previousOnHand,
-      newQuantity: product.onHand,
-      user: req.userId
+    res.json({ 
+      message: "Stock added successfully", 
+      product 
     });
-
-    res.json({ message: "Stock added successfully", product });
   } catch (error) {
+    console.error("Error adding stock:", error);
     res.status(500).json({ error: error.message });
   }
 };

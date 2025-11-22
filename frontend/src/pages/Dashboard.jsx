@@ -34,7 +34,7 @@ export default function Dashboard() {
         axios.get("http://localhost:5000/api/products", { headers }),
         axios.get("http://localhost:5000/api/receipts/statistics", { headers }),
         axios.get("http://localhost:5000/api/deliveries/statistics", { headers }),
-        axios.get("http://localhost:5000/api/move-history?limit=5", { headers })
+        axios.get("http://localhost:5000/api/move-history?limit=3", { headers })
       ]);
 
       const products = productsRes.data;
@@ -46,11 +46,18 @@ export default function Dashboard() {
           lowStock: lowStockProducts.length,
           totalValue: products.reduce((sum, p) => sum + (p.onHand * p.costPerUnit), 0)
         },
-        receipts: receiptsRes.data,
-        deliveries: deliveriesRes.data,
+        // include late waiting (fallback to 0 if API doesn’t provide)
+        receipts: {
+          ...receiptsRes.data,
+          lateWaiting: receiptsRes.data.lateWaiting ?? receiptsRes.data.waitingLate ?? 0
+        },
+        deliveries: {
+          ...deliveriesRes.data,
+          lateWaiting: deliveriesRes.data.lateWaiting ?? deliveriesRes.data.waitingLate ?? 0
+        },
         moveHistory: {
           total: movesRes.data.length,
-          recent: movesRes.data.slice(0, 5)
+          recent: movesRes.data.slice(0, 3)
         }
       });
 
@@ -212,8 +219,9 @@ export default function Dashboard() {
             color="#10b981"
             onClick={() => navigate("/receipts")}
             badge={[
-              { value: stats.receipts.pending, label: 'Pending', color: '#f59e0b' },
-              { value: stats.receipts.done, label: 'Done', color: '#10b981' }
+              { value: stats.receipts.pending ?? 0, label: 'Pending', color: '#f59e0b' },
+              { value: stats.receipts.done ?? 0, label: 'Done', color: '#10b981' },
+              { value: stats.receipts.lateWaiting ?? 0, label: 'Late Waiting', color: '#ef4444' }
             ]}
           />
 
@@ -225,8 +233,9 @@ export default function Dashboard() {
             color="#ef4444"
             onClick={() => navigate("/deliveries")}
             badge={[
-              { value: stats.deliveries.pending, label: 'Pending', color: '#f59e0b' },
-              { value: stats.deliveries.done, label: 'Done', color: '#10b981' }
+              { value: stats.deliveries.pending ?? 0, label: 'Pending', color: '#f59e0b' },
+              { value: stats.deliveries.done ?? 0, label: 'Done', color: '#10b981' },
+              { value: stats.deliveries.lateWaiting ?? 0, label: 'Late Waiting', color: '#ef4444' }
             ]}
           />
         </div>

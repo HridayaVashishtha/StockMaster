@@ -1,235 +1,206 @@
-import Receipt from "../models/Receipt.js";
-import Product from "../models/Product.js";
-import MoveHistory from "../models/MoveHistory.js";
+import Receipt from '../models/Receipt.js';
+import Product from '../models/Product.js';
 
-// GET all receipts
-export const getAllReceipts = async (req, res) => {
+// @desc    Get all receipts
+// @route   GET /api/receipts
+// @access  Private
+export const getReceipts = async (req, res) => {
   try {
-    const { status, supplier, search } = req.query;
-    
-    let filter = {};
-    if (status) filter.status = status;
-    if (supplier) filter.supplier = { $regex: supplier, $options: 'i' };
-    if (search) {
-      filter.$or = [
-        { reference: { $regex: search, $options: 'i' } },
-        { supplier: { $regex: search, $options: 'i' } },
-        { toLocation: { $regex: search, $options: 'i' } }
-      ];
-    }
-    
-    const receipts = await Receipt.find(filter)
-      .populate('items.product', 'name sku unit')
-      .populate('createdBy', 'name email')
-      .populate('validatedBy', 'name email')
+    const receipts = await Receipt.find({ user: req.userId })
+      .populate('items.product', 'name sku')
       .sort({ createdAt: -1 });
-    
     res.json(receipts);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in getReceipts:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// GET single receipt by ID
+// @desc    Get single receipt
+// @route   GET /api/receipts/:id
+// @access  Private
 export const getReceiptById = async (req, res) => {
   try {
-    const receipt = await Receipt.findById(req.params.id)
-      .populate('items.product', 'name sku unit costPerUnit')
-      .populate('createdBy', 'name email')
-      .populate('validatedBy', 'name email');
-    
-    if (!receipt) return res.status(404).json({ error: "Receipt not found" });
+    const receipt = await Receipt.findOne({
+      _id: req.params.id,
+      user: req.userId
+    }).populate('items.product', 'name sku');
+
+    if (!receipt) {
+      return res.status(404).json({ message: 'Receipt not found' });
+    }
+
     res.json(receipt);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in getReceiptById:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// CREATE new receipt
+// @desc    Create new receipt
+// @route   POST /api/receipts
+// @access  Private
 export const createReceipt = async (req, res) => {
   try {
-    const { supplier, items, toLocation, scheduleDate, responsible, note } = req.body;
-    
+    const { supplier, toLocation, scheduleDate, responsible, items } = req.body;
+
     if (!supplier || !items || items.length === 0) {
-      return res.status(400).json({ error: "Supplier and items are required" });
+      return res.status(400).json({ error: 'Supplier and items are required' });
     }
-    
-    // Validate all products exist
-    for (const item of items) {
-      const product = await Product.findById(item.product);
-      if (!product) {
-        return res.status(404).json({ error: `Product ${item.product} not found` });
-      }
-    }
-    
+
+    // Generate reference number
+    const count = await Receipt.countDocuments();
+    const reference = `REC-${String(count + 1).padStart(5, '0')}`;
+
     const receipt = await Receipt.create({
+      reference,
       supplier,
-      items,
-      toLocation: toLocation || "WH/Stock1",
-      scheduleDate,
+      fromLocation: 'Vendors',
+      toLocation: toLocation || 'WH/Stock1',
+      scheduleDate: scheduleDate || new Date(),
       responsible,
-      note,
-      status: "DRAFT",
-      createdBy: req.userId
+      items: items.map(item => ({
+        product: item.product,
+        quantityExpected: item.quantityExpected,
+        quantityReceived: 0
+      })),
+      user: req.userId
     });
-    
-    await receipt.populate('items.product', 'name sku unit');
-    await receipt.populate('createdBy', 'name email');
-    
-    res.status(201).json({ message: "Receipt created", receipt });
+
+    const populatedReceipt = await Receipt.findById(receipt._id)
+      .populate('items.product', 'name sku');
+
+    res.status(201).json({ receipt: populatedReceipt });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in createReceipt:', error);
+    res.status(400).json({ error: error.message });
   }
 };
 
-// UPDATE receipt
+// @desc    Update receipt
+// @route   PUT /api/receipts/:id
+// @access  Private
 export const updateReceipt = async (req, res) => {
   try {
-    const { supplier, items, toLocation, scheduleDate, responsible, note, status } = req.body;
-    const receipt = await Receipt.findById(req.params.id);
-    
-    if (!receipt) return res.status(404).json({ error: "Receipt not found" });
-    
-    // Only drafts and waiting can be fully edited
-    if (receipt.status === "DONE" || receipt.status === "CANCELLED") {
-      return res.status(400).json({ error: "Cannot edit completed or cancelled receipts" });
+    const receipt = await Receipt.findOne({
+      _id: req.params.id,
+      user: req.userId
+    });
+
+    if (!receipt) {
+      return res.status(404).json({ message: 'Receipt not found' });
     }
-    
+
+    const { supplier, toLocation, scheduleDate, responsible, items, status } = req.body;
+
     if (supplier) receipt.supplier = supplier;
-    if (items) receipt.items = items;
     if (toLocation) receipt.toLocation = toLocation;
-    if (scheduleDate !== undefined) receipt.scheduleDate = scheduleDate;
-    if (responsible !== undefined) receipt.responsible = responsible;
-    if (note !== undefined) receipt.note = note;
+    if (scheduleDate) receipt.scheduleDate = scheduleDate;
+    if (responsible) receipt.responsible = responsible;
+    if (items) receipt.items = items;
     if (status) receipt.status = status;
+
+    const updatedReceipt = await receipt.save();
     
-    await receipt.save();
-    await receipt.populate('items.product', 'name sku unit');
-    
-    res.json({ message: "Receipt updated", receipt });
+    const populatedReceipt = await Receipt.findById(updatedReceipt._id)
+      .populate('items.product', 'name sku');
+
+    res.json(populatedReceipt);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in updateReceipt:', error);
+    res.status(400).json({ message: error.message });
   }
 };
 
-// VALIDATE receipt (mark as DONE and update stock)
-export const validateReceipt = async (req, res) => {
-  try {
-    const { receivedQuantities } = req.body; // Optional: { productId: quantity }
-    const receipt = await Receipt.findById(req.params.id)
-      .populate('items.product');
-    
-    if (!receipt) return res.status(404).json({ error: "Receipt not found" });
-    
-    if (receipt.status === "DONE") {
-      return res.status(400).json({ error: "Receipt already validated" });
-    }
-    
-    if (receipt.status === "CANCELLED") {
-      return res.status(400).json({ error: "Cannot validate cancelled receipt" });
-    }
-    
-    // Update received quantities
-    if (receivedQuantities) {
-      for (const item of receipt.items) {
-        const productId = item.product._id.toString();
-        if (receivedQuantities[productId] !== undefined) {
-          item.quantityReceived = receivedQuantities[productId];
-        } else {
-          item.quantityReceived = item.quantityExpected;
-        }
-      }
-    } else {
-      // Default: mark all as received with expected quantity
-      receipt.items.forEach(item => {
-        item.quantityReceived = item.quantityExpected;
-      });
-    }
-    
-    // Update stock for each item
-    for (const item of receipt.items) {
-      if (item.quantityReceived > 0) {
-        const product = await Product.findById(item.product._id);
-        product.onHand += item.quantityReceived;
-        product.freeToUse += item.quantityReceived;
-        await product.save();
-        
-        // Log in move history
-        await MoveHistory.create({
-          product: item.product._id,
-          type: "RECEIPT",
-          quantity: item.quantityReceived,
-          fromLocation: receipt.fromLocation,
-          toLocation: receipt.toLocation,
-          reference: receipt.reference,
-          contact: receipt.supplier,
-          status: "DONE",
-          user: req.userId
-        });
-      }
-    }
-    
-    receipt.status = "DONE";
-    receipt.validatedBy = req.userId;
-    receipt.validatedAt = new Date();
-    await receipt.save();
-    
-    await receipt.populate('createdBy', 'name email');
-    await receipt.populate('validatedBy', 'name email');
-    
-    res.json({ message: "Receipt validated and stock updated", receipt });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// CANCEL receipt
-export const cancelReceipt = async (req, res) => {
-  try {
-    const receipt = await Receipt.findById(req.params.id);
-    if (!receipt) return res.status(404).json({ error: "Receipt not found" });
-    
-    if (receipt.status === "DONE") {
-      return res.status(400).json({ error: "Cannot cancel validated receipts" });
-    }
-    
-    receipt.status = "CANCELLED";
-    await receipt.save();
-    
-    res.json({ message: "Receipt cancelled", receipt });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// DELETE receipt
+// @desc    Delete receipt
+// @route   DELETE /api/receipts/:id
+// @access  Private
 export const deleteReceipt = async (req, res) => {
   try {
-    const receipt = await Receipt.findById(req.params.id);
-    if (!receipt) return res.status(404).json({ error: "Receipt not found" });
-    
-    if (receipt.status === "DONE") {
-      return res.status(400).json({ error: "Cannot delete validated receipts" });
+    const receipt = await Receipt.findOne({
+      _id: req.params.id,
+      user: req.userId
+    });
+
+    if (!receipt) {
+      return res.status(404).json({ message: 'Receipt not found' });
     }
-    
+
+    if (receipt.status === 'DONE') {
+      return res.status(400).json({ error: 'Cannot delete completed receipt' });
+    }
+
     await receipt.deleteOne();
-    res.json({ message: "Receipt deleted" });
+    res.json({ message: 'Receipt removed' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in deleteReceipt:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// GET receipt statistics
+// @desc    Validate receipt (mark items as received)
+// @route   POST /api/receipts/:id/validate
+// @access  Private
+export const validateReceipt = async (req, res) => {
+  try {
+    const receipt = await Receipt.findOne({
+      _id: req.params.id,
+      user: req.userId
+    });
+
+    if (!receipt) {
+      return res.status(404).json({ message: 'Receipt not found' });
+    }
+
+    if (receipt.status === 'DONE') {
+      return res.status(400).json({ error: 'Receipt already validated' });
+    }
+
+    // Update stock for each item
+    for (const item of receipt.items) {
+      const product = await Product.findById(item.product);
+      if (product) {
+        product.onHand += item.quantityReceived || item.quantityExpected;
+        product.freeToUse += item.quantityReceived || item.quantityExpected;
+        await product.save();
+      }
+      item.quantityReceived = item.quantityReceived || item.quantityExpected;
+    }
+
+    receipt.status = 'DONE';
+    await receipt.save();
+
+    const populatedReceipt = await Receipt.findById(receipt._id)
+      .populate('items.product', 'name sku');
+
+    res.json(populatedReceipt);
+  } catch (error) {
+    console.error('Error in validateReceipt:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get receipt statistics
+// @route   GET /api/receipts/statistics
+// @access  Private
 export const getReceiptStatistics = async (req, res) => {
   try {
-    const total = await Receipt.countDocuments();
-    const pending = await Receipt.countDocuments({ 
-      status: { $in: ["DRAFT", "WAITING", "READY"] } 
-    });
-    const done = await Receipt.countDocuments({ status: "DONE" });
+    const receipts = await Receipt.find({ user: req.userId });
     
-    res.json({ total, pending, done });
+    const stats = {
+      total: receipts.length,
+      pending: receipts.filter(r => r.status === 'READY').length,
+      done: receipts.filter(r => r.status === 'DONE').length,
+      lateWaiting: receipts.filter(r => 
+        r.status === 'READY' && 
+        r.scheduleDate && 
+        new Date(r.scheduleDate) < new Date()
+      ).length
+    };
+
+    res.json(stats);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in getReceiptStatistics:', error);
+    res.status(500).json({ message: error.message });
   }
 };
