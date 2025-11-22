@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import { injectGlobalStyles } from './styles/colors';
 import Stock from "./pages/Stock";
-
+import MoveHistory from "./pages/MoveHistory";
 
 function App() {
   injectGlobalStyles();
@@ -20,6 +20,7 @@ function App() {
         <Route path="/stock" element={<Stock />} />
         <Route path="/" element={<Dashboard/>} />   {/* Dashboard route */}
         <Route path="/forgot-password" element={<ForgotPassword />} /> {/* Forgot password route */}
+        <Route path="/move-history" element={<MoveHistory />} />
       </Routes>
     </BrowserRouter>
   );
