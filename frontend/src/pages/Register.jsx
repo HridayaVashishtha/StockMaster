@@ -1,9 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import "./AuthStyles.css";
+import { injectGlobalStyles } from "../styles/colors";
 
 export default function Register() {
+  injectGlobalStyles();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +22,7 @@ export default function Register() {
         setMsg(res.data.error);
       } else {
         setMsg(res.data.message || "Registered successfully");
-        setTimeout(() => navigate("/login"), 1500);
+        setTimeout(() => navigate("/login"), 1200);
       }
     } catch (err) {
       setMsg(err.response?.data?.error || "Registration failed");
@@ -33,6 +35,7 @@ export default function Register() {
         <h2>Register</h2>
         <form onSubmit={handleRegister}>
           <input
+            className="input"
             type="text"
             placeholder="Name"
             autoComplete="name"
@@ -41,6 +44,7 @@ export default function Register() {
             onChange={(e) => setName(e.target.value)}
           />
           <input
+            className="input"
             type="email"
             placeholder="Email"
             autoComplete="email"
@@ -49,6 +53,7 @@ export default function Register() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
+            className="input"
             type="password"
             placeholder="Password"
             autoComplete="new-password"
@@ -56,11 +61,11 @@ export default function Register() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
+          <select className="select" value={role} onChange={(e) => setRole(e.target.value)}>
             <option value="WarehouseStaff">Warehouse Staff</option>
             <option value="InventoryManager">Inventory Manager</option>
           </select>
-          <button type="submit">Create Account</button>
+          <button className="btn btn-primary" type="submit">Create Account</button>
           <div className="msg">{msg}</div>
         </form>
         <div className="auth-alt">

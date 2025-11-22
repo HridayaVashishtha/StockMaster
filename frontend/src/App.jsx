@@ -4,8 +4,10 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
+import { injectGlobalStyles } from './styles/colors';
 
 function App() {
+  injectGlobalStyles();
   return (
     <BrowserRouter>
       <Routes>

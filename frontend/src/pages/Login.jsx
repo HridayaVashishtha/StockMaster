@@ -1,9 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import "./AuthStyles.css";
+import { injectGlobalStyles } from "../styles/colors";
 
 export default function Login() {
+  injectGlobalStyles();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
@@ -19,8 +21,7 @@ export default function Login() {
       } else if (res.data.token) {
         localStorage.setItem("token", res.data.token);
         setMsg("Login successful");
-        // Redirect to dashboard or home
-        setTimeout(() => navigate("/dashboard"), 1000);
+        setTimeout(() => navigate("/profile"), 800);
       }
     } catch (err) {
       setMsg(err.response?.data?.error || "Login failed");
@@ -33,6 +34,7 @@ export default function Login() {
         <h2>Login</h2>
         <form onSubmit={handleLogin}>
           <input
+            className="input"
             type="email"
             placeholder="Email"
             autoComplete="email"
@@ -41,6 +43,7 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
+            className="input"
             type="password"
             placeholder="Password"
             autoComplete="current-password"
@@ -48,7 +51,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button type="submit">Sign In</button>
+          <button className="btn btn-primary" type="submit">Sign In</button>
           <div className="msg">{msg}</div>
         </form>
         <div className="auth-alt">

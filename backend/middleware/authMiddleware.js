@@ -1,15 +1,16 @@
 import jwt from "jsonwebtoken";
 
-const protect = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
+export default function auth(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
 
-  if (!token) return res.status(401).json({ error: "Not Authorized" });
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ error: "Token Invalid" });
-    req.user = decoded;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
+    req.userRole = decoded.role;
     next();
-  });
-};
-
-export default protect;
+  } catch (e) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}

@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Building, Briefcase, Calendar, Edit2, Save, X, Camera, Lock } from 'lucide-react';
 import axios from 'axios';
+import { injectGlobalStyles } from '../styles/colors';
 
 export default function Profile() {
+  injectGlobalStyles();
+
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
-    phone: '',
-    role: '',
-    department: '',
-    location: '',
-    joinDate: '',
-    employeeId: ''
+    role: ''
   });
 
   const [editedProfile, setEditedProfile] = useState({ ...profile });
@@ -26,27 +23,23 @@ export default function Profile() {
     confirmPassword: ''
   });
 
-  // Fetch user profile on component mount
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/profile', {
-          headers: { 
-            Authorization: `Bearer ${token}` 
-          }
+        const { data } = await axios.get('http://localhost:5000/api/profile', {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        
-        setProfile(response.data);
-        setEditedProfile(response.data);
-        setIsAdmin(response.data.role === 'Inventory Manager');
+
+        setProfile(data);
+        setEditedProfile(data);
+        setIsAdmin(data.role === 'InventoryManager');
         setLoading(false);
       } catch (error) {
         console.error('Error fetching profile:', error);
         setLoading(false);
       }
     };
-
     fetchProfile();
   }, []);
 
@@ -58,18 +51,16 @@ export default function Profile() {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://localhost:5000/api/profile', editedProfile, {
-        headers: { 
-          Authorization: `Bearer ${token}` 
-        }
+      const { data } = await axios.put('http://localhost:5000/api/profile', editedProfile, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
-      setProfile({ ...editedProfile });
+
+      setProfile(data.user);
       setIsEditing(false);
       alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      alert(error.response?.data?.error || 'Failed to update profile');
     }
   };
 
@@ -87,102 +78,68 @@ export default function Profile() {
   };
 
   const handlePasswordSubmit = async () => {
-    if (passwordData.newPassword === passwordData.confirmPassword) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.put('http://localhost:5000/api/profile/password', {
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        }, {
-          headers: { 
-            Authorization: `Bearer ${token}` 
-          }
-        });
-        
-        alert('Password updated successfully!');
-        setShowPasswordModal(false);
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      } catch (error) {
-        console.error('Error updating password:', error);
-        alert('Failed to update password');
-      }
-    } else {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert('New passwords do not match!');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put('http://localhost:5000/api/profile/password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert('Password updated successfully!');
+      setShowPasswordModal(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      alert(error.response?.data?.error || 'Failed to update password');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8E1B7' }}>
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderColor: '#754E1A' }}></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+      <div className="loading-container">
+        <div style={{ textAlign: 'center' }}>
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: '#F8E1B7' }}>
-      <div className="max-w-4xl mx-auto">
+    <div className="profile-container">
+      <div className="profile-wrapper">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-6">
-              <div className="relative">
-                <div 
-                  className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-semibold"
-                  style={{ background: 'linear-gradient(to bottom right, #B6CBBD, #754E1A)' }}
-                >
-                  {profile.firstName && profile.lastName ? 
-                    `${profile.firstName[0]}${profile.lastName[0]}` : 
-                    '?'}
-                </div>
-                <button className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md border border-gray-200 hover:bg-gray-50">
-                  <Camera className="w-4 h-4 text-gray-600" />
-                </button>
+        <div className="profile-header">
+          <div className="profile-header-content">
+            <div className="profile-avatar-section">
+              <div className="profile-avatar">
+                {profile.name ? profile.name[0] : '?'}
               </div>
 
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {profile.firstName || profile.lastName ? 
-                    `${profile.firstName} ${profile.lastName}` : 
-                    'User Profile'}
-                </h1>
-                <p className="text-gray-600 mt-1">{profile.role || 'No role assigned'}</p>
-                <p className="text-sm text-gray-500 mt-1">{profile.employeeId || 'No ID'}</p>
+              <div className="profile-info">
+                <h1>{profile.name || 'User Profile'}</h1>
+                <p className="role">{profile.role || 'No role'}</p>
+                <p className="employee-id">{profile.email}</p>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="profile-actions">
               {!isEditing ? (
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors"
-                  style={{ backgroundColor: '#754E1A' }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5d3e15'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#754E1A'}
-                >
-                  <Edit2 className="w-4 h-4" />
+                <button onClick={handleEdit} className="btn btn-primary">
                   Edit Profile
                 </button>
               ) : (
                 <>
-                  <button
-                    onClick={handleCancel}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
+                  <button onClick={handleCancel} className="btn btn-cancel">
                     Cancel
                   </button>
-                  <button
-                    onClick={handleSave}
-                    className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors"
-                    style={{ backgroundColor: '#CBA35C' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#b8923f'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#CBA35C'}
-                  >
-                    <Save className="w-4 h-4" />
+                  <button onClick={handleSave} className="btn btn-primary">
                     Save Changes
                   </button>
                 </>
@@ -192,218 +149,67 @@ export default function Profile() {
         </div>
 
         {/* Personal Information */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4" />
-                First Name
-              </label>
+        <div className="profile-section">
+          <h2>Personal Information</h2>
+          <div className="profile-grid">
+            <div className="profile-field">
+              <label className="profile-label">Full Name</label>
               {isEditing ? (
                 <input
                   type="text"
-                  value={editedProfile.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  placeholder="Enter first name"
+                  value={editedProfile.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="profile-input"
+                  placeholder="Enter full name"
                 />
               ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.firstName || 'Not provided'}</p>
+                <p className="profile-value">{profile.name || 'Not provided'}</p>
               )}
             </div>
 
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4" />
-                Last Name
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedProfile.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  placeholder="Enter last name"
-                />
-              ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.lastName || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Mail className="w-4 h-4" />
-                Email Address
-              </label>
+            <div className="profile-field">
+              <label className="profile-label">Email</label>
               {isEditing ? (
                 <input
                   type="email"
                   value={editedProfile.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  className="profile-input"
                   placeholder="Enter email"
                 />
               ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.email || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Phone className="w-4 h-4" />
-                Phone Number
-              </label>
-              {isEditing ? (
-                <input
-                  type="tel"
-                  value={editedProfile.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  placeholder="Enter phone number"
-                />
-              ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.phone || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4" />
-                Location
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedProfile.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  placeholder="Enter location"
-                />
-              ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.location || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Building className="w-4 h-4" />
-                Department
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedProfile.department}
-                  onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  placeholder="Enter department"
-                />
-              ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.department || 'Not provided'}</p>
+                <p className="profile-value">{profile.email || 'Not provided'}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Work Information */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Work Information</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Briefcase className="w-4 h-4" />
-                Role
-              </label>
+        <div className="profile-section">
+          <h2>Work</h2>
+          <div className="profile-grid">
+            <div className="profile-field">
+              <label className="profile-label">Role</label>
               {isEditing && isAdmin ? (
                 <select
                   value={editedProfile.role}
                   onChange={(e) => handleInputChange('role', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  className="profile-select"
                 >
-                  <option value="">Select Role</option>
-                  <option value="Inventory Manager">Inventory Manager</option>
-                  <option value="Warehouse Staff">Warehouse Staff</option>
+                  <option value="WarehouseStaff">Warehouse Staff</option>
+                  <option value="InventoryManager">Inventory Manager</option>
                 </select>
               ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.role || 'Not assigned'}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="w-4 h-4" />
-                Join Date
-              </label>
-              {isEditing && isAdmin ? (
-                <input
-                  type="date"
-                  value={editedProfile.joinDate}
-                  onChange={(e) => handleInputChange('joinDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.joinDate || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4" />
-                Employee ID
-              </label>
-              {isEditing && isAdmin ? (
-                <input
-                  type="text"
-                  value={editedProfile.employeeId}
-                  onChange={(e) => handleInputChange('employeeId', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  placeholder="Enter employee ID"
-                />
-              ) : (
-                <p className="text-gray-900 px-3 py-2">{profile.employeeId || 'Not assigned'}</p>
+                <p className="profile-value">{profile.role || 'Not assigned'}</p>
               )}
             </div>
           </div>
-
-          {!isAdmin && isEditing && (
-            <p className="text-sm text-gray-500 mt-4 italic">
-              * Contact your administrator to update Role, Join Date, or Employee ID
-            </p>
-          )}
         </div>
 
         {/* Security Settings */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Security</h2>
-          
-          <button
-            onClick={() => setShowPasswordModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
-            style={{ backgroundColor: '#B6CBBD', color: '#1f2937' }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#a3baa9'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#B6CBBD'}
-          >
-            <Lock className="w-4 h-4" />
+        <div className="profile-section">
+          <h2>Security</h2>
+          <button onClick={() => setShowPasswordModal(true)} className="btn btn-secondary">
             Change Password
           </button>
         </div>
@@ -411,80 +217,46 @@ export default function Profile() {
 
       {/* Password Change Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Change Password</h3>
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Change Password</h3>
+              <button onClick={() => setShowPasswordModal(false)} className="modal-close">×</button>
             </div>
 
-            <div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Current Password
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                    onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                    onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                    onFocus={(e) => e.target.style.borderColor = '#754E1A'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  />
-                </div>
+            <div className="modal-body">
+              <div className="profile-field">
+                <label className="profile-label">Current Password</label>
+                <input
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
+                  className="profile-input"
+                />
               </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowPasswordModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePasswordSubmit}
-                  className="flex-1 px-4 py-2 text-white rounded-lg transition-colors"
-                  style={{ backgroundColor: '#754E1A' }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5d3e15'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#754E1A'}
-                >
-                  Update Password
-                </button>
+              <div className="profile-field">
+                <label className="profile-label">New Password</label>
+                <input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                  className="profile-input"
+                />
               </div>
+              <div className="profile-field">
+                <label className="profile-label">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                  className="profile-input"
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button onClick={() => setShowPasswordModal(false)} className="btn btn-cancel">Cancel</button>
+              <button onClick={handlePasswordSubmit} className="btn btn-primary">Update Password</button>
             </div>
           </div>
         </div>

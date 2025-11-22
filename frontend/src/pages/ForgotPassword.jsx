@@ -1,9 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import "./AuthStyles.css";
+import { injectGlobalStyles } from "../styles/colors";
 
 export default function ForgotPassword() {
+  injectGlobalStyles();
+
   const [step, setStep] = useState(1); // 1: request OTP, 2: verify & reset
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -51,6 +53,7 @@ export default function ForgotPassword() {
         {step === 1 && (
           <form onSubmit={handleRequestOTP}>
             <input
+              className="input"
               type="email"
               placeholder="Enter your email"
               autoComplete="email"
@@ -58,7 +61,7 @@ export default function ForgotPassword() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <button type="submit">Send OTP</button>
+            <button className="btn btn-primary" type="submit">Send OTP</button>
             <div className="msg">{msg}</div>
           </form>
         )}
@@ -66,14 +69,18 @@ export default function ForgotPassword() {
         {step === 2 && (
           <form onSubmit={handleResetPassword}>
             <input
+              className="input"
               type="text"
               placeholder="Enter 6-digit OTP"
               required
+              inputMode="numeric"
+              pattern="\d{6}"
               maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
             />
             <input
+              className="input"
               type="password"
               placeholder="New Password"
               autoComplete="new-password"
@@ -81,7 +88,7 @@ export default function ForgotPassword() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
-            <button type="submit">Reset Password</button>
+            <button className="btn btn-primary" type="submit">Reset Password</button>
             <div className="msg">{msg}</div>
           </form>
         )}
