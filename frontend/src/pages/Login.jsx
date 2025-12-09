@@ -22,7 +22,12 @@ export default function Login() {
         localStorage.setItem("name", res.data.name);
         localStorage.setItem("role", res.data.role);
         setMsg("Login successful");
-        setTimeout(() => navigate("/profile"), 800);
+        
+        // Force navigation with window.location
+        window.location.href = "/dashboard";
+        
+        // Or use navigate (but ensure it's imported and used)
+        // navigate("/dashboard");
       }
     } catch (err) {
       setMsg(err.response?.data?.error || "Login failed");

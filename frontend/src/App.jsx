@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Stock from "./pages/Stock";
 import MoveHistory from "./pages/MoveHistory";
@@ -9,6 +11,9 @@ import DeliveryPage from "./pages/DeliveryPage";
 import DeliveryDetails from "./pages/DeliveryDetails";
 import ProductsPage from "./pages/ProductsPage";
 import ProductDetails from "./pages/ProductDetails";
+import AdjustmentsPage from "./pages/AdjustmentsPage";
+import WarehousePage from "./pages/WarehousePage";
+import LocationPage from "./pages/LocationPage";
 import Profile from "./pages/Profile";
 
 function App() {
@@ -18,6 +23,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+        <Route path="/forgot-password" element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
         <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
         <Route path="/stock" element={isAuthenticated ? <Stock /> : <Navigate to="/login" />} />
@@ -28,6 +35,9 @@ function App() {
         <Route path="/delivery/:id" element={isAuthenticated ? <DeliveryDetails /> : <Navigate to="/login" />} />
         <Route path="/products" element={isAuthenticated ? <ProductsPage /> : <Navigate to="/login" />} />
         <Route path="/product/:id" element={isAuthenticated ? <ProductDetails /> : <Navigate to="/login" />} />
+        <Route path="/adjustments" element={isAuthenticated ? <AdjustmentsPage /> : <Navigate to="/login" />} />
+        <Route path="/warehouse" element={isAuthenticated ? <WarehousePage /> : <Navigate to="/login" />} />
+        <Route path="/location" element={isAuthenticated ? <LocationPage /> : <Navigate to="/login" />} />
         <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
       </Routes>
     </Router>
